@@ -1,0 +1,39 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{device_name}}</title>
+</head>
+   <body>
+        <p><font style="font-size:30px">{{device_name}}</font></p>
+        <p></p>
+      <table border = 1>
+            <tr>
+                <th>成员</th>
+                <th>最近三次体温</th>
+                <th>上次测量时间</th>
+                <th>当前状态</th>
+                <th>操作</th>
+            </tr>
+         {% for p in profiles %}
+            <tr>
+                <td> {{ p[0] }} </td>
+                <td> 
+                   {% for t in p[1]%}
+                   {{ t }} </br>
+                   {% endfor %}
+                </td>
+                <td> {{ p[2] }} </td>
+                <td> {{ p[3] }} </td>
+                <td> 
+                    <a href="delete_user?mac={{mac}}&user={{p[0]}}" target="_blank"> 删除用户 </a></br>
+                </td>
+            </tr>
+         {% endfor %}
+      </table>
+      <p></p>
+      <a href="change_name?mac={{mac}}" target="_blank"><font style="font-size:20px">设备重命名</font></a>
+      <a href="add_user?mac={{mac}}" target="_blank"><font style="font-size:20px">添加成员</font></a>
+
+   </body>
+</html>

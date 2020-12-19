@@ -1,0 +1,15 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>删除成员</title>
+</head>
+   <body>
+      <form action = "change_name" method = "post">
+         <p>您确认删除吗？该行为不可撤销，确认后该成员体温记录也会被一并删除</p>
+         <input type="hidden" name="name" value="{{name}}">
+         <input type="hidden" name="mac" value="{{mac}}">
+         <p><input type="submit" value="确定" /></p>
+      </form>
+
+   </body>
+</html>
