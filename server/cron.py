@@ -19,4 +19,5 @@ def check_all():
         print ('{}定时任务执行'.format(time.time()))
     except TypeError: print('{}定时任务异常'.format(time.time()))
         
-
+def upload_all():
+    pass

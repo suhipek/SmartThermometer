@@ -73,7 +73,7 @@ def create_device(mac: str, device: str = '体温枪{}'):
 
 def get_config(mac: str):
     mac = mac.upper()
-    rd = {}
+    rd = {'name': [], 'status': [], 'temp': []}
     try:
         with open('data/{}.csv'.format(mac)) as f:
             data = f.readlines()
@@ -83,9 +83,11 @@ def get_config(mac: str):
             print(line.split(','))
             temp = line.split(',')[1].split(';')[-1]
             stat = line.split(',')[3].strip('\n')
-            rd[name] = {'temp': temp, 'stat': stat}
+            rd['name'].append(name)
+            rd['status'].append(stat)
+            rd['temp'].append(temp)
         return json.dumps(rd)
-    except OSError: return {}
+    except: return "error"
         
 
 def submit_temp(mac: str, user: str, temp: str):
@@ -96,7 +98,7 @@ def submit_temp(mac: str, user: str, temp: str):
             f.close()
         flines[1:] = list(map(lambda x: x.split(','), flines[1:]))
         for line in flines[1:]:
-            if line[0] == user:
+            if get_name_abbr(line[0]) == user:
                 line[1] = ';'.join(line[1].split(';')[1:] + [temp])
                 line[2] = str(time.time())
                 if float(temp) <= 37.5: line[3] = '正常'

@@ -16,9 +16,9 @@ def manage():
 
 @app.route('/submit_temp',methods = ['POST', 'GET'])
 def submit_temperature():
-    if request.method == 'GET':
+    if request.method == 'POST':
         try:
-            if submit_temp(request.args['mac'], request.args['user'], request.args['temp']) == True:
+            if submit_temp(request.args['mac'], request.args['name'], request.args['temp']) == True:
                 return 'success'
             else: return 'error'
         except: return 'error'
@@ -61,7 +61,10 @@ def new_user():
 
 @app.route('/get_config',methods = ['POST', 'GET'])
 def get_con():
-    return json.dumps({'abc': '233'})
+    if request.method == 'POST':
+        return get_config(request.form['mac'])
+    else: return 'error'
+
 
 if __name__ == '__main__':
     app.run(debug = True)
