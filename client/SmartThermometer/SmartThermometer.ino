@@ -7,7 +7,7 @@
 #define SCREEN_WIDTH	128
 #define SCREEN_HEIGHT	64
 #define OLED_RESET	-1
-#define SERVER_IP	"1.1.1.1"
+#define SERVER_IP	"47.100.56.128"
 #define UP		12
 #define DOWN		13
 #define MID		15
@@ -30,6 +30,8 @@ uint8_t choseP		= 0;            /*选中的用户是谁 */
 bool	atPage		= false;        /* 是否在测温页面中 */
 float	currTemp	= 0;            /* 当前测温 */
 float	temperature[4]	= { 0 };        /* 从服务器获取到的温度 */
+
+
 
 
 /* 网络相关函数 */
@@ -128,7 +130,7 @@ void refreshOffline()              /* 刷新测温页面 */
   display.display();
 }
 
-bool refreshHomePage()          /* 刷新主页 */
+void refreshHomePage()          /* 刷新主页 */
 {
 	display.clearDisplay();
 	display.setTextSize( 2 );
@@ -186,6 +188,7 @@ void setup()
 
 	display.clearDisplay();
 	display.setCursor( 25, 10 );
+  getConfig();
 	if ( WiFi.status() != WL_CONNECTED )
 		display.print( "NETWORK FAILED" );
 	else display.print( "CONNECTED" );
