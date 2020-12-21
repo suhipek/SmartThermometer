@@ -11,6 +11,7 @@
 #define UP		12
 #define DOWN		13
 #define MID		15
+#define TEMP_REFRESH_FREQ 500
 
 Adafruit_SSD1306 display( SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET );
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
@@ -30,9 +31,17 @@ uint8_t choseP		= 0;            /*选中的用户是谁 */
 bool	atPage		= false;        /* 是否在测温页面中 */
 float	currTemp	= 0;            /* 当前测温 */
 float	temperature[4]	= { 0 };        /* 从服务器获取到的温度 */
+int lastRefresh = 0;
+int currTime = 0;
 
-
-
+void upCallback();
+void downCallback();
+void midCallback();
+bool getConfig();
+bool submitTemp();
+void refreshTemp();
+void refreshOffline();
+void refreshHomePage();
 
 /* 网络相关函数 */
 bool getConfig()
@@ -147,6 +156,28 @@ void refreshHomePage()          /* 刷新主页 */
 	}
 }
 
+void upCallback(){
+  choseP--;
+  refreshHomePage();
+}
+
+void downCallback(){
+  choseP++;
+  refreshHomePage();
+}
+
+void midCallback(){
+  if ( atPage == false )
+    {
+      atPage = true;
+      refreshTemp();
+    }
+    if ( atPage == true )
+    {
+      atPage == false;
+      submitTemp();
+    }
+}
 
 void setup()
 {
@@ -157,6 +188,9 @@ void setup()
 	pinMode( UP, INPUT_PULLUP );
 	pinMode( DOWN, INPUT_PULLUP );
 	pinMode( MID, INPUT_PULLUP );
+  attachInterrupt(UP, upCallback, FALLING);
+  attachInterrupt(DOWN, downCallback, FALLING);
+  attachInterrupt(MID, midCallback, FALLING);
 
 	WiFi.macAddress( MAC_array_STA );
 	for ( int i = 0; i < sizeof(MAC_array_STA); ++i )
@@ -199,43 +233,19 @@ void setup()
 
 void loop()
 {
+  currTime = millis();
+  
 
-  if(WiFi.status() != WL_CONNECTED){
+  if(WiFi.status() != WL_CONNECTED && currTime - lastRefresh >= TEMP_REFRESH_FREQ){
     refreshOffline();
-    delay(500);
+    lastRefresh = currTime;
     return;
   }
   
-	if ( digitalRead( UP ) == LOW && choseP > 0 && atPage == false )
-	{
-		choseP--;
-		refreshHomePage();
-	}
-	if ( digitalRead( DOWN ) == LOW && choseP < 3 && atPage == false )
-	{
-		choseP++;
-		refreshHomePage();
-	}
-	if ( digitalRead( MID ) == LOW )
-	{
-		if ( atPage == false )
-		{
-			atPage = true;
-			refreshTemp();
-		}
-		if ( atPage == true )
-		{
-			atPage == false;
-			submitTemp();
-		}
-	}
-
-	if ( digitalRead( MID ) != LOW && atPage == true )
+	if ( digitalRead( MID ) != LOW && atPage == true && currTime - lastRefresh >= TEMP_REFRESH_FREQ )
 	{
 		refreshTemp();
-		delay( 480 );
+    lastRefresh = currTime;
 	}
 
-
-	delay( 20 );
 }
