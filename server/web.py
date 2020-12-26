@@ -18,10 +18,14 @@ def manage():
 def submit_temperature():
     if request.method == 'POST':
         try:
-            if submit_temp(request.args['mac'], request.args['name'], request.args['temp']) == True:
+            print(request.json)
+            print(submit_temp(request.json['mac'], request.json['name'], request.json['temp']))
+            print(type(request.json['mac']))
+            print(type(request.json['temp']))
+            if submit_temp(request.json['mac'], request.json['name'], str(request.json['temp'])) == True:
                 return 'success'
             else: return 'error'
-        except: return 'error'
+        except OSError: return 'error'
 
 @app.route('/change_name',methods = ['POST', 'GET'])
 def change_name():
@@ -62,9 +66,10 @@ def new_user():
 @app.route('/get_config',methods = ['POST', 'GET'])
 def get_con():
     if request.method == 'POST':
-        return get_config(request.form['mac'])
+        print(request.json)
+        return get_config(str(request.json['mac']))
     else: return 'error'
 
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    app.run()
