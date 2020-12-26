@@ -36,21 +36,23 @@ int currTime  = 0;
 bool needRefreshTemp = false;
 bool needRefreshHome = false;
 bool needSubmit = false;
-
-void refreshHomePage();
+bool midPressed = false;
+bool upPressed = false;
+bool downPressed = false;
 
 
 /* 网络相关函数 */
 bool getConfig()
 {
   HTTPClient  http;
+  Serial.println(MAC_char_STA);
   http.begin( client, "http://" SERVER_IP "/get_config" ); /* HTTP */
   http.addHeader( "Content-Type", "application/json" );
-  StaticJsonDocument<200> doc, responseDoc;
-  doc['mac'] = MAC_char_STA;
-  char myDoc[measureJson( doc ) + 1];
-  serializeJson( doc, myDoc, measureJson( doc ) + 1 );
-  Serial.println( myDoc );
+  StaticJsonDocument<500> doc, responseDoc;
+  doc["mac"] = MAC_char_STA;
+  char myDoc[300];
+  serializeJson( doc, myDoc );
+  serializeJson( doc, Serial );
   int httpCode = http.POST( myDoc );
 
   if ( httpCode > 0 )
@@ -60,7 +62,7 @@ bool getConfig()
       String response = http.getString();
       http.end();
       DeserializationError error = deserializeJson( responseDoc, response );
-      if ( !error )
+      Serial.println(error.c_str());
       {
         for ( int i = 0; i <= 3; i++ )
         {
@@ -82,12 +84,12 @@ bool getConfig()
 bool submitTemp()                                                       /* 提交温度 */
 {
   HTTPClient  http;
-  http.begin( client, "http://" SERVER_IP "/submit_temp/" );      /* HTTP */
+  http.begin( client, "http://" SERVER_IP "/submit_temp" );      /* HTTP */
   http.addHeader( "Content-Type", "application/json" );
-  StaticJsonDocument<200> doc;
-  doc['name'] = uname[choseP];
-  doc['mac']  = MAC_char_STA;
-  doc['temp'] = currTemp;
+  StaticJsonDocument<300> doc;
+  doc["name"] = uname[choseP];
+  doc["mac"]  = MAC_char_STA;
+  doc["temp"] = currTemp;
   char myDoc[measureJson( doc ) + 1];
   serializeJson( doc, myDoc, measureJson( doc ) + 1 );
   Serial.println( myDoc );
@@ -126,6 +128,13 @@ void refreshTemp()              /* 刷新测温页面 */
   display.display();
 }
 
+void showSuccess()
+{
+  display.clearDisplay();
+  display.setCursor( 25, 30 );
+  display.setTextSize( 2 );
+  display.print( "OK" );
+}
 
 void refreshOffline()              /* 刷新测温页面 */
 {
@@ -164,25 +173,32 @@ void refreshHomePage()          /* 刷新主页 */
 
 void ICACHE_RAM_ATTR upCallback()
 {
+  /*
   if ( atPage == true ) return;
   if(choseP > 0) choseP--;
   Serial.println("UP PRESSED");
   needRefreshHome = true;
+  */
+  upPressed = true;
 }
 
 
 void ICACHE_RAM_ATTR downCallback()
 {
+  /*
   if ( atPage == true ) return;
   if(choseP < 3) choseP++;
   Serial.println("DOWN PRESSED");
   needRefreshHome = true;
+  */
+  downPressed = true;
 }
 
 
 void ICACHE_RAM_ATTR midCallback()
 {
   Serial.println("MID PRESSED");
+  /*
   if ( atPage == false )
   {
     atPage = true;
@@ -194,6 +210,8 @@ void ICACHE_RAM_ATTR midCallback()
     needRefreshHome = true;
     needSubmit = true;
   }
+  */
+  midPressed = true;
 }
 
 
@@ -202,21 +220,16 @@ void setup()
   Serial.begin( 9600 );
 
   mlx.begin();
-  Serial.println("Before Pullup");
-  pinMode( UP, INPUT_PULLUP );
-  pinMode( DOWN, INPUT_PULLUP );
-  pinMode( MID, INPUT_PULLUP );
-  Serial.println("Before Register");
-  attachInterrupt( UP, upCallback, FALLING );
-  attachInterrupt( DOWN, downCallback, FALLING );
-  attachInterrupt( MID, midCallback, FALLING );
-  Serial.println("After Register");
+
+  
+
 
   WiFi.macAddress( MAC_array_STA );
   for ( int i = 0; i < sizeof(MAC_array_STA); ++i )
-    sprintf( MAC_char_STA, "%s%02x:", MAC_char_STA, MAC_array_STA[i] );
+    sprintf( MAC_char_STA, "%s%02x", MAC_char_STA, MAC_array_STA[i] );
 
   display.begin( SSD1306_SWITCHCAPVCC, 0x3C );
+
   display.clearDisplay();
   display.setTextColor( WHITE );
   display.setTextSize( 2 );
@@ -224,7 +237,7 @@ void setup()
   display.print( "WELCOME" );
   display.setTextWrap( false );
   display.display();
-  delay( 500 );
+  delay( 100 );
   display.setTextSize( 1 );
 
   WiFi.mode( WIFI_STA );
@@ -248,51 +261,108 @@ void setup()
   else display.print( "CONNECTED" );
   display.display();
   delay( 500 );
+  
+  pinMode( UP, INPUT_PULLUP );
+  pinMode( DOWN, INPUT_PULLUP );
+  pinMode( MID, INPUT_PULLUP );
+
+  attachInterrupt( UP, upCallback, FALLING );
+  attachInterrupt( DOWN, downCallback, FALLING );
+  attachInterrupt( MID, midCallback, FALLING );
+  
   refreshHomePage();
 }
 
 
 void loop()
 {
-  currTime = millis();
 
-  if ( WiFi.status() != WL_CONNECTED && currTime - lastRefresh >= TEMP_REFRESH_FREQ )
+  if ( WiFi.status() != WL_CONNECTED )
   {
     refreshOffline();
-    lastRefresh = currTime;
+    delay(500);
     return;
   }
   
-  if (needRefreshHome){
+  currTime = millis();
+  
+    Serial.print("是否在测温页面中 ");
+    Serial.println(atPage);
+    Serial.println();
+  
+  if(midPressed)
+  {
     delay(50);
-    if (digitalRead(UP) == LOW || digitalRead(DOWN) == LOW || digitalRead(MID) == LOW){
-      refreshHomePage();
-      needRefreshHome = false;
+    if(digitalRead(MID) == LOW)
+    {
+      if ( atPage == false )
+      {
+        atPage = true;
+        needRefreshTemp = true;
+      }
+      else
+      {
+        atPage = false;
+        needRefreshHome = true;
+        needSubmit = true;
+      }
     }
   }
-  if (needRefreshTemp){
+
+  if(upPressed)
+  {
     delay(50);
-    if (digitalRead(MID) == LOW){
-      Serial.println("Trying to refresh temp");
-      refreshTemp();
-      needRefreshTemp = false;
-      Serial.println("Not a bussiness of refreshing temp");
+    if ( atPage == false &&  digitalRead(UP) == LOW ){
+      if(choseP > 0) choseP--;
+      Serial.println("UP PRESSED");
+      needRefreshHome = true;
     }
+  }
+
+  if(downPressed)
+  {
+    delay(50);
+    if ( atPage == false &&  digitalRead(DOWN) == LOW ){
+      if(choseP < 3) choseP++;
+      Serial.println("DOWN PRESSED");
+      needRefreshHome = true;
+    }
+  }  
+
+  
+  
+  if (needRefreshHome){
+    refreshHomePage();
+    needRefreshHome = false;
+  }
+  if (needRefreshTemp){
+    Serial.println("Trying to refresh temp");
+    refreshTemp();
+    needRefreshTemp = false;
+    Serial.println("Not a bussiness of refreshing temp");
   }
 
   if (needSubmit) {
+    submitTemp();
+    needSubmit = false;
+    Serial.println("Not a bussiness of submiting temp");
+    delay(200);
+    getConfig();
     delay(50);
-    if (digitalRead(MID) == LOW){
-      Serial.println("Trying to submit");
-      //submitTemp();
-      needSubmit = false;
-      Serial.println("Not a bussiness of submiting temp");
-    }
   }
 
-  Serial.println(digitalRead( MID ) != LOW);
-  Serial.println(atPage == true);
-  Serial.println(currTime - lastRefresh >= TEMP_REFRESH_FREQ);
+
+    Serial.println("------调试信息------");
+    Serial.print("是否需要刷新 ");
+    Serial.println(currTime - lastRefresh >= TEMP_REFRESH_FREQ);
+    Serial.print("刷新间隔时间 ");
+    Serial.println(currTime - lastRefresh);
+    Serial.print("是否在测温页面中 ");
+    Serial.println(atPage);
+    Serial.println();
+
+
+  
   if ( atPage == true && currTime - lastRefresh >= TEMP_REFRESH_FREQ )
   {
     Serial.println(currTime);
