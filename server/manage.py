@@ -101,8 +101,8 @@ def submit_temp(mac: str, user: str, temp: str):
             if get_name_abbr(line[0]) == user:
                 line[1] = ';'.join(line[1].split(';')[1:] + [temp])
                 line[2] = str(time.time())
-                if float(temp) <= 37.5: line[3] = '正常'
-                else: line[3] = '异常'
+                if float(temp) <= 37.5: line[3] = '正常\n'
+                else: line[3] = '异常\n'
         flines[1:] = map(','.join, flines[1:])
         with open('data/{}.csv'.format(mac), mode='w') as f:
             f.writelines(flines)
