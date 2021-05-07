@@ -164,6 +164,12 @@ void refreshHomePage()          /* 刷新主页 */
     if ( i == choseP )
       display.setTextColor( BLACK, WHITE );
     else display.setTextColor( WHITE, BLACK );
+    if ( uname[i] == "null" )
+    {
+      display.print("EMPTY SLOT");
+      continue;
+    }
+    Serial.println(uname[i]);
     display.print( uname[i] );
     display.print( " " );
     display.print( temperature[i] );
@@ -216,7 +222,7 @@ void setup()
   display.setTextSize( 1 );
 
   WiFi.mode( WIFI_STA );
-  WiFi.begin( "NKU_WLAN" );
+  WiFi.begin( "K40", "testwifi" );
 
   for ( uint8_t i = 0; WiFi.status() != WL_CONNECTED && i <= 15; i++ )
   {
