@@ -11,7 +11,7 @@ def get_profiles(mac: str):
             profiles = []
             for i in flines[1:]:
                 line = i.strip('\n').split(',')
-                line[1] = line[1].split(';')
+                line[1] = map(lambda x: x[0:5],line[1].split(';'))
                 try:
                     line[2] = time.strftime("%m-%d %H:%M", \
                         time.localtime(float(line[2])))
@@ -21,14 +21,28 @@ def get_profiles(mac: str):
     except FileNotFoundError:
         return "未找到设备", []
 
+def delete_user(mac: str, name: str):
+    mac = mac.upper()
+    try:
+        with open('data/{}.csv'.format(mac)) as f:
+            data = f.readlines()
+            f.close()
+            data = filter(lambda x: (x.split(',')[0] != name), data)
+        with open('data/{}.csv'.format(mac), mode='w') as f:
+            print(data)
+            f.writelines(data)
+            f.close()
+        return True
+    except: return False
+
 def add_user(mac: str, name: str):
     mac = mac.upper()
     try:
         with open('data/{}.csv'.format(mac)) as f:
             data = f.readlines()
             f.close()
-            if data[-1] == '\n': data.remove('\n')
-            else: data[-1] += '\n' 
+            #if data[-1] == '\n': data.remove('\n')
+            #else: data[-1] += '\n' 
             if len(data) <= 5:
                 data.append('{},36.50;36.50;36.50,-1,未测'.format(name))
             else: return False

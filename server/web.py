@@ -67,9 +67,17 @@ def new_user():
 def get_con():
     if request.method == 'POST':
         print(request.json)
+        print(get_config(str(request.json['mac'])))
         return get_config(str(request.json['mac']))
     else: return 'error'
 
+@app.route('/delete_user',methods = ['POST', 'GET'])
+def deleteUser():
+    if request.method == 'GET':
+        if delete_user(request.args['mac'],request.args['user']):
+            return redirect("manage?mac={}".format(request.args['mac']))
+        else: return "Error"
+    else: return 'error'
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
